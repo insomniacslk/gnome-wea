@@ -36,6 +36,7 @@ func main() {
 type Config struct {
 	PicturesDir string         `json:"pictures_dir"`
 	Interval    xjson.Duration `json:"interval"`
+	Editor      string         `json:"editor"`
 }
 
 func getRandomPicture(dirname string) (string, error) {
@@ -122,6 +123,12 @@ func onReady(configFile string, cfg *Config) {
 	// Sets the icon of a menu item. Only available on Mac and Windows.
 	mQuit.SetIcon(Icon)
 
+	// sets the editor
+	editor := "xdg-open"
+	if cfg.Editor != "" {
+		editor = cfg.Editor
+	}
+
 	go func() {
 		timer := time.NewTimer(time.Duration(cfg.Interval))
 		log.Printf("Changing background picture every %s", cfg.Interval)
@@ -130,7 +137,7 @@ func onReady(configFile string, cfg *Config) {
 			case <-mQuit.ClickedCh:
 				systray.Quit()
 			case <-mEdit.ClickedCh:
-				cmd := exec.Command("xdg-open", configFile)
+				cmd := exec.Command(editor, configFile)
 				log.Printf("Executing %v", cmd)
 				cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 				if err := cmd.Run(); err != nil {
