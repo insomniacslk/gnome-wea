@@ -109,7 +109,13 @@ func onReady(configFile string, cfg *Config) {
 	systray.SetIcon(Icon)
 	systray.SetTitle("RandBG")
 	systray.SetTooltip("Change background randomly")
-	mChange := systray.AddMenuItem("Change Background", "Change background with a randomly picked one from your configured directory")
+	mChange := systray.AddMenuItem("Change background now", "Change background with a randomly picked one from your configured directory")
+	var mInterval *systray.MenuItem
+	if cfg.Interval == 0 {
+	} else {
+		mInterval = systray.AddMenuItem(fmt.Sprintf("Background will change every %s", cfg.Interval), "The background will automatically change at the configured interval")
+	}
+	mInterval.Disable()
 	mEdit := systray.AddMenuItem("Edit config", "Open configuration file for editing")
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
