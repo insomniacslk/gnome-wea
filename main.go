@@ -130,7 +130,7 @@ type weatherItem struct {
 	loc      location
 }
 
-func refreshWeather(cfg *Config, curLoc *location, items []weatherItem) {
+func updateWeather(cfg *Config, curLoc *location, items []weatherItem) {
 	tempUnit := openweathermap.TempUnits[openweathermap.Units(cfg.Units)]
 
 	curLocWea, err := getWeather(cfg, curLoc)
@@ -177,12 +177,12 @@ func onReady(configFile string, cfg *Config) {
 	systray.SetTitle("Weather")
 	systray.SetTooltip("Weather app")
 
-	mRefresh := systray.AddMenuItem("Refresh weather now", "Force a refresh of the weather information for all the locations")
+	mUpdate := systray.AddMenuItem("Update weather now", "Force an update of the weather information for all the locations")
 	var mInterval *systray.MenuItem
 	if cfg.Interval == 0 {
         mInterval = systray.AddMenuItem("Weather will not refresh automatically", "No interval is defined in the config file, or zero is set")
 	} else {
-		mInterval = systray.AddMenuItem(fmt.Sprintf("Weather will refresh every %s", cfg.Interval), "The weather information will automatically refresh at the configured interval")
+		mInterval = systray.AddMenuItem(fmt.Sprintf("Weather will update every %s", cfg.Interval), "The weather information will automatically update at the configured interval")
 	}
 	mInterval.Disable()
 	mEdit := systray.AddMenuItem("Edit config", "Open configuration file for editing")
@@ -224,10 +224,10 @@ func onReady(configFile string, cfg *Config) {
 		editor = cfg.Editor
 	}
 
-	refreshWeather(cfg, curLoc, items)
+	updateWeather(cfg, curLoc, items)
 	go func() {
 		timer := time.NewTimer(time.Duration(cfg.Interval))
-		log.Printf("Refreshing weather every %s", cfg.Interval)
+		log.Printf("Updating weather every %s", cfg.Interval)
 		for {
 			select {
 			case <-mQuit.ClickedCh:
@@ -239,10 +239,10 @@ func onReady(configFile string, cfg *Config) {
 				if err := cmd.Run(); err != nil {
 					log.Printf("Error when opening editor: %v", err)
 				}
-			case <-mRefresh.ClickedCh:
-				refreshWeather(cfg, curLoc, items)
+			case <-mUpdate.ClickedCh:
+				updateWeather(cfg, curLoc, items)
 			case <-timer.C:
-				refreshWeather(cfg, curLoc, items)
+				updateWeather(cfg, curLoc, items)
 			}
 		}
 	}()
