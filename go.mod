@@ -1,4 +1,4 @@
-module github.com/insomniacslk/gnome-random-background
+module github.com/insomniacslk/gnome-wea
 
 go 1.18
 
