@@ -1,6 +1,6 @@
-# gnome-background-changer
+# gnome-wea
 
-Change background randomly via app indicator
+Monitor weather in your system tray
 
 Build with
 ```
@@ -16,7 +16,13 @@ Create a configfile at `~/.config/bgchanger/config.json` with content similar to
 the following:
 ```
 {
-    "pictures_dir": "/home/you/Pictures/Backgrounds",
-    "interval": "15m"
+    "locations": ["dublin", "san francisco"],
+    "openweathermap_api_key": "your api key",
+    "googlemaps_api_key": "your api key",
+    "interval": "15m",
+    "language": "en",
+    "units": "metric",
+    "debug": false,
+    "editor": "gedit"
 }
 ```
