@@ -180,6 +180,7 @@ func onReady(configFile string, cfg *Config) {
 	mRefresh := systray.AddMenuItem("Refresh weather now", "Force a refresh of the weather information for all the locations")
 	var mInterval *systray.MenuItem
 	if cfg.Interval == 0 {
+        mInterval = systray.AddMenuItem("Weather will not refresh automatically", "No interval is defined in the config file, or zero is set")
 	} else {
 		mInterval = systray.AddMenuItem(fmt.Sprintf("Weather will refresh every %s", cfg.Interval), "The weather information will automatically refresh at the configured interval")
 	}
