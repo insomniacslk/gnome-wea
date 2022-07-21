@@ -229,7 +229,7 @@ func onReady(configFile string, cfg *Config) {
 
 	updateWeather(cfg, curLoc, items, mLastUpdate)
 	go func() {
-		timer := time.NewTimer(time.Duration(cfg.Interval))
+		timer := time.NewTicker(time.Duration(cfg.Interval))
 		log.Printf("Updating weather every %s", cfg.Interval)
 		for {
 			select {
