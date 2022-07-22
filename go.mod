@@ -1,4 +1,4 @@
-module github.com/insomniacslk/gnome-wea
+module github.com/insomniacslk/wea
 
 go 1.18
 

@@ -1,4 +1,4 @@
-# gnome-wea
+# wea
 
 Monitor weather in your system tray
 
