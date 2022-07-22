@@ -2,6 +2,8 @@
 
 Monitor weather in your system tray
 
+![screenshot.png](resources/screenshot.png)
+
 Build with
 ```
 go build
