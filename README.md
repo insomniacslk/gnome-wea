@@ -26,3 +26,10 @@ the following:
     "editor": "gedit"
 }
 ```
+
+## Create DMG for macOS
+
+```
+./scripts/build-macos.sh
+```
+
