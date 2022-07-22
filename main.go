@@ -42,6 +42,7 @@ type Config struct {
 	Units                string         `json:"units"`
 	Debug                bool           `json:"debug"`
 	Editor               string         `json:"editor"`
+	EditorArgs           []string       `json:"editor_args"`
 }
 
 func loadConfig() (string, *Config, error) {
@@ -222,9 +223,15 @@ func onReady(configFile string, cfg *Config) {
 	mQuit.SetIcon(Icon)
 
 	// sets the editor
-	editor := "xdg-open"
+	var (
+		editorPath = DefaultEditorPath
+		editorArgs = DefaultEditorArgs
+	)
 	if cfg.Editor != "" {
-		editor = cfg.Editor
+		editorPath = cfg.Editor
+	}
+	if cfg.EditorArgs != nil {
+		editorArgs = cfg.EditorArgs
 	}
 
 	updateWeather(cfg, curLoc, items, mLastUpdate)
@@ -236,7 +243,7 @@ func onReady(configFile string, cfg *Config) {
 			case <-mQuit.ClickedCh:
 				systray.Quit()
 			case <-mEdit.ClickedCh:
-				cmd := exec.Command(editor, configFile)
+				cmd := exec.Command(editorPath, append(editorArgs, configFile)...)
 				log.Printf("Executing %v", cmd)
 				cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 				if err := cmd.Run(); err != nil {
