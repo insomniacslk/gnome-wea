@@ -157,6 +157,7 @@ func updateWeather(cfg *Config, curLoc *location, items []weatherItem, lastUpdat
 			wea.Current.Weather[0].Description,
 		)
 		item.menuitem.SetTitle(text)
+		item.menuitem.SetIcon(icons.Icons[wea.Current.Weather[0].Icon])
 	}
 	lastUpdateItem.SetTitle(fmt.Sprintf("Last update: %s", time.Now().Format("Mon Jan 2 15:04:05 MST")))
 }
