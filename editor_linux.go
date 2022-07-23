@@ -1,6 +1,8 @@
 package main
 
+import "os"
+
 var (
-	DefaultEditorPath = "xdg-open"
+	DefaultEditorPath = os.ExpandEnv("$EDITOR")
 	DefaultEditorArgs = []string{}
 )

@@ -24,7 +24,16 @@ const progname = "wea"
 func main() {
 	configFile, cfg, err := loadConfig()
 	if err != nil {
-		log.Fatalf("Failed to open config file: %v", err)
+		if os.IsNotExist(err) {
+			log.Printf("Config file '%s' does not exist, creating one", configFile)
+			if err := editConfigFile(cfg, configFile); err != nil {
+				log.Fatalf("Failed to create config file: %v", err)
+			}
+			log.Printf("Please reload this app after creating a suitable configuration file")
+			os.Exit(0)
+		} else {
+			log.Fatalf("Failed to open config file: %v", err)
+		}
 	}
 	systray.Run(
 		func() { onReady(configFile, cfg) },
@@ -52,17 +61,11 @@ func loadConfig() (string, *Config, error) {
 	configFile := path.Join(configPath, "config.json")
 	log.Printf("Trying to load config file %s", configFile)
 	if err := configdir.MakePath(configPath); err != nil {
-		if os.IsNotExist(err) {
-			return configFile, &cfg, nil
-		}
-		return configFile, nil, fmt.Errorf("failed to create config path '%s': %w", configPath, err)
+		return configFile, nil, err
 	}
 	data, err := os.ReadFile(configFile)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return configFile, &cfg, nil
-		}
-		return configFile, nil, fmt.Errorf("failed to open '%s': %w", configFile, err)
+		return configFile, nil, err
 	}
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return configFile, nil, fmt.Errorf("failed to unmarshal config file: %w", err)
@@ -223,18 +226,6 @@ func onReady(configFile string, cfg *Config) {
 	mQuit := systray.AddMenuItem("Quit", "Terminate the app")
 	mQuit.SetIcon(Icon)
 
-	// sets the editor
-	var (
-		editorPath = DefaultEditorPath
-		editorArgs = DefaultEditorArgs
-	)
-	if cfg.Editor != "" {
-		editorPath = cfg.Editor
-	}
-	if cfg.EditorArgs != nil {
-		editorArgs = cfg.EditorArgs
-	}
-
 	updateWeather(cfg, curLoc, items, mLastUpdate)
 	go func() {
 		timer := time.NewTicker(time.Duration(cfg.Interval))
@@ -244,11 +235,8 @@ func onReady(configFile string, cfg *Config) {
 			case <-mQuit.ClickedCh:
 				systray.Quit()
 			case <-mEdit.ClickedCh:
-				cmd := exec.Command(editorPath, append(editorArgs, configFile)...)
-				log.Printf("Executing %v", cmd)
-				cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
-				if err := cmd.Run(); err != nil {
-					log.Printf("Error when opening editor: %v", err)
+				if err := editConfigFile(cfg, configFile); err != nil {
+					log.Printf("Failed to edit config file: %v", err)
 				}
 			case <-mUpdate.ClickedCh:
 				updateWeather(cfg, curLoc, items, mLastUpdate)
@@ -257,6 +245,26 @@ func onReady(configFile string, cfg *Config) {
 			}
 		}
 	}()
+}
+
+func editConfigFile(cfg *Config, configFile string) error {
+	var (
+		editorPath = DefaultEditorPath
+		editorArgs = DefaultEditorArgs
+	)
+	if cfg != nil {
+		if cfg.Editor != "" {
+			editorPath = cfg.Editor
+		}
+		if cfg.EditorArgs != nil {
+			editorArgs = cfg.EditorArgs
+		}
+	}
+
+	cmd := exec.Command(editorPath, append(editorArgs, configFile)...)
+	log.Printf("Executing %v", cmd)
+	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+	return cmd.Run()
 }
 
 func onExit() {
