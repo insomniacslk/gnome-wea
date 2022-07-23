@@ -49,6 +49,7 @@ type Config struct {
 	Interval             xjson.Duration `json:"interval"`
 	Language             string         `json:"language"`
 	Units                string         `json:"units"`
+	ShowGraph            bool           `json:"show_graph"`
 	Debug                bool           `json:"debug"`
 	Editor               string         `json:"editor"`
 	EditorArgs           []string       `json:"editor_args"`
@@ -134,7 +135,7 @@ type weatherItem struct {
 	loc      location
 }
 
-func updateWeather(cfg *Config, curLoc *location, items []weatherItem, lastUpdateItem *systray.MenuItem) {
+func updateWeather(cfg *Config, curLoc *location, items []weatherItem, lastUpdateItem *systray.MenuItem, g *Graph) {
 	tempUnit := openweathermap.TempUnits[openweathermap.Units(cfg.Units)]
 
 	curLocWea, err := getWeather(cfg, curLoc)
@@ -144,7 +145,17 @@ func updateWeather(cfg *Config, curLoc *location, items []weatherItem, lastUpdat
 		// try the other locations without stopping
 	} else {
 		systray.SetTitle(fmt.Sprintf("%s: %.01f%s %s", curLoc.name, curLocWea.Current.Temp, tempUnit, curLocWea.Current.Weather[0].Description))
-		systray.SetIcon(icons.Icons[curLocWea.Current.Weather[0].Icon])
+		if cfg.ShowGraph {
+			g.SetNext(int(curLocWea.Current.Temp))
+			icon, err := g.ToIcon()
+			if err != nil {
+				log.Printf("Failed to convert to icon, skipping: %v", err)
+			} else {
+				systray.SetIcon(icon)
+			}
+		} else {
+			systray.SetIcon(icons.Icons[curLocWea.Current.Weather[0].Icon])
+		}
 	}
 	for _, item := range items {
 		wea, err := getWeather(cfg, &item.loc)
@@ -174,12 +185,25 @@ func getCurrentLocation() (string, error) {
 }
 
 func onReady(configFile string, cfg *Config) {
+	var g *Graph
+	if cfg.ShowGraph {
+		g = NewGraph(100, 100, &darkGreen, &gray, graphStyleBar)
+		g.Blank()
+		icon, err := g.ToIcon()
+		if err != nil {
+			log.Fatalf("Failed to convert to icon: %v", err)
+		}
+		systray.SetIcon(icon)
+	}
 	curLocName, err := getCurrentLocation()
 	if err != nil {
 		log.Fatalf("Cannot get current location: %v", err)
 	}
 
-	systray.SetIcon(icons.Icon01d)
+	// use the weather icon if the user is not requesting the temperature graph
+	if !cfg.ShowGraph {
+		systray.SetIcon(icons.Icon01d)
+	}
 	systray.SetTitle("Weather")
 	systray.SetTooltip("Weather app")
 
@@ -226,7 +250,7 @@ func onReady(configFile string, cfg *Config) {
 	mQuit := systray.AddMenuItem("Quit", "Terminate the app")
 	mQuit.SetIcon(Icon)
 
-	updateWeather(cfg, curLoc, items, mLastUpdate)
+	updateWeather(cfg, curLoc, items, mLastUpdate, g)
 	go func() {
 		timer := time.NewTicker(time.Duration(cfg.Interval))
 		log.Printf("Updating weather every %s", cfg.Interval)
@@ -239,9 +263,9 @@ func onReady(configFile string, cfg *Config) {
 					log.Printf("Failed to edit config file: %v", err)
 				}
 			case <-mUpdate.ClickedCh:
-				updateWeather(cfg, curLoc, items, mLastUpdate)
+				updateWeather(cfg, curLoc, items, mLastUpdate, g)
 			case <-timer.C:
-				updateWeather(cfg, curLoc, items, mLastUpdate)
+				updateWeather(cfg, curLoc, items, mLastUpdate, g)
 			}
 		}
 	}()

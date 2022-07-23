@@ -24,10 +24,24 @@ the following:
     "interval": "15m",
     "language": "en",
     "units": "metric",
+    "show_graph": true,
     "debug": false,
-    "editor": "gedit"
+    "editor": "gedit",
+    "editor_args": []
 }
 ```
+
+Where:
+* `locations` is a list of strings, each representing a location that will be geocoded by the Google Maps API
+* `openweathermap_api_key` is an OpenWeatherMap API key. You need an account on openweathermap.com to create one
+* `googlemaps_api_key` is a Google Maps API key. You need a Google Cloud account to create the API key. You need the Geocoding API to be enabled
+* `interval` is the time interval between weather updates, according to Go's [`time.ParseDuration` format](https://pkg.go.dev/time#ParseDuration)
+* `language` is a two-letter language code string, e.g. "EN" or "IT". The string is 'ase-insensitive
+* `units` is one of "metric", "imperial", or "standard"
+* `show_graph` (optional, default: false) shows a temperature graph for the current location if set to `true`, or a weather icon if `false`
+* `debug` (optional, default: false) prints debug messages on the terminal
+* `editor` (optional: default depends on OS) is the program name for the editor used to modify the configuration. If it's not an absolute path, the program must be in the default path
+* `editor_args` (optional, default is empty) is a set of optional arguments to pass to the editor. For example you may want to use `["-a", "TextEdit"]` on macOS
 
 ## Create DMG for macOS
 
