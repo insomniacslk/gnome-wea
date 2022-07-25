@@ -103,6 +103,9 @@ func getLocation(cfg *Config, locName string) (*location, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to geocode location: %w", err)
 	}
+	if cfg.Debug {
+		log.Printf("GMaps Geocoding response: %+v", resp)
+	}
 	if len(resp) == 0 {
 		return nil, fmt.Errorf("location not found")
 	}
@@ -135,9 +138,17 @@ type weatherItem struct {
 	loc      location
 }
 
-func updateWeather(cfg *Config, curLoc *location, items []weatherItem, lastUpdateItem *systray.MenuItem, g *Graph) {
+func updateCurrentLocation(cfg *Config, g *Graph) {
 	tempUnit := openweathermap.TempUnits[openweathermap.Units(cfg.Units)]
-
+	curLocName, err := getCurrentLocation(cfg)
+	if err != nil {
+		log.Printf("Cannot get current location: %v", err)
+		return
+	}
+	curLoc, err := getLocation(cfg, curLocName)
+	if err != nil {
+		log.Fatalf("Failed to get location '%s': %v", curLocName, err)
+	}
 	curLocWea, err := getWeather(cfg, curLoc)
 	if err != nil {
 		systray.SetTitle("failed to get weather")
@@ -156,6 +167,14 @@ func updateWeather(cfg *Config, curLoc *location, items []weatherItem, lastUpdat
 		} else {
 			systray.SetIcon(icons.Icons[curLocWea.Current.Weather[0].Icon])
 		}
+	}
+}
+
+func updateWeather(cfg *Config, items []weatherItem, lastUpdateItem *systray.MenuItem, doCurrentLocation bool, g *Graph) {
+	tempUnit := openweathermap.TempUnits[openweathermap.Units(cfg.Units)]
+
+	if doCurrentLocation {
+		updateCurrentLocation(cfg, g)
 	}
 	for _, item := range items {
 		wea, err := getWeather(cfg, &item.loc)
@@ -176,10 +195,13 @@ func updateWeather(cfg *Config, curLoc *location, items []weatherItem, lastUpdat
 	lastUpdateItem.SetTitle(fmt.Sprintf("Last update: %s", time.Now().Format("Mon Jan 2 15:04:05 MST")))
 }
 
-func getCurrentLocation() (string, error) {
+func getCurrentLocation(cfg *Config) (string, error) {
 	resp, err := ipapi.Get(nil, nil)
 	if err != nil {
 		return "", fmt.Errorf("ipapi.Get failed: %w", err)
+	}
+	if cfg.Debug {
+		log.Printf("IP cfgAPI response: %+v", resp)
 	}
 	return fmt.Sprintf("%s, %s", resp.City, resp.CountryCode), nil
 }
@@ -194,10 +216,6 @@ func onReady(configFile string, cfg *Config) {
 			log.Fatalf("Failed to convert to icon: %v", err)
 		}
 		systray.SetIcon(icon)
-	}
-	curLocName, err := getCurrentLocation()
-	if err != nil {
-		log.Fatalf("Cannot get current location: %v", err)
 	}
 
 	// use the weather icon if the user is not requesting the temperature graph
@@ -223,10 +241,6 @@ func onReady(configFile string, cfg *Config) {
 	// Sets the icon of a menu item. Only available on Mac and Windows.
 
 	var items []weatherItem
-	curLoc, err := getLocation(cfg, curLocName)
-	if err != nil {
-		log.Fatalf("Failed to get location '%s': %v", curLocName, err)
-	}
 
 	for _, locName := range cfg.Locations {
 		loc, err := getLocation(cfg, locName)
@@ -250,7 +264,7 @@ func onReady(configFile string, cfg *Config) {
 	mQuit := systray.AddMenuItem("Quit", "Terminate the app")
 	mQuit.SetIcon(Icon)
 
-	updateWeather(cfg, curLoc, items, mLastUpdate, g)
+	updateWeather(cfg, items, mLastUpdate, true, g)
 	go func() {
 		timer := time.NewTicker(time.Duration(cfg.Interval))
 		log.Printf("Updating weather every %s", cfg.Interval)
@@ -263,9 +277,9 @@ func onReady(configFile string, cfg *Config) {
 					log.Printf("Failed to edit config file: %v", err)
 				}
 			case <-mUpdate.ClickedCh:
-				updateWeather(cfg, curLoc, items, mLastUpdate, g)
+				updateWeather(cfg, items, mLastUpdate, true, g)
 			case <-timer.C:
-				updateWeather(cfg, curLoc, items, mLastUpdate, g)
+				updateWeather(cfg, items, mLastUpdate, true, g)
 			}
 		}
 	}()
