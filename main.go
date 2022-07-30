@@ -7,7 +7,9 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path"
+	"syscall"
 	"time"
 
 	"github.com/getlantern/systray"
@@ -22,6 +24,20 @@ import (
 const progname = "wea"
 
 func main() {
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGUSR1)
+	updateSignal := make(chan struct{}, 1)
+	go func(us chan<- struct{}) {
+		for {
+			sig := <-signals
+			switch sig {
+			case syscall.SIGUSR1:
+				fmt.Println("Received SIGUSR1, updating weather")
+				us <- struct{}{}
+			}
+		}
+	}(updateSignal)
+
 	configFile, cfg, err := loadConfig()
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -36,7 +52,7 @@ func main() {
 		}
 	}
 	systray.Run(
-		func() { onReady(configFile, cfg) },
+		func() { onReady(configFile, cfg, updateSignal) },
 		onExit,
 	)
 }
@@ -206,7 +222,7 @@ func getCurrentLocation(cfg *Config) (string, error) {
 	return fmt.Sprintf("%s, %s", resp.City, resp.CountryCode), nil
 }
 
-func onReady(configFile string, cfg *Config) {
+func onReady(configFile string, cfg *Config, updateSignal <-chan struct{}) {
 	var g *Graph
 	if cfg.ShowGraph {
 		g = NewGraph(100, 100, &darkGreen, &gray, graphStyleBar)
@@ -279,6 +295,8 @@ func onReady(configFile string, cfg *Config) {
 			case <-mUpdate.ClickedCh:
 				updateWeather(cfg, items, mLastUpdate, true, g)
 			case <-timer.C:
+				updateWeather(cfg, items, mLastUpdate, true, g)
+			case <-updateSignal:
 				updateWeather(cfg, items, mLastUpdate, true, g)
 			}
 		}
