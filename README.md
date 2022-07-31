@@ -49,3 +49,13 @@ Where:
 ./scripts/build-macos.sh
 ```
 
+## Weather update after resume
+
+(linux-only, systemd-only)
+
+If you want the weather and location to update after resuming, you can copy
+[`scripts/wea-resume.sh`](scripts/wea-resume.sh) under your
+`systemd-suspend.service` scripts directory (typically
+`/usr/lib/systemd/systemd-sleep`).
+The scripts simply sends a `SIGUSR1` to the `wea` program, which will initiate
+a weather update.
