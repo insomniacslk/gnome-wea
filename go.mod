@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/getlantern/systray v1.2.1
+	github.com/insomniacslk/editor v0.0.0-20220803222208-57a076b919d7
 	github.com/insomniacslk/ipapi v0.0.0-20220721094550-f4429d9166a0
 	github.com/insomniacslk/openweathermap v0.0.0-20220721103415-cffea279f82c
 	github.com/insomniacslk/xjson v0.0.0-20210106140854-1589ccfd1a1a
