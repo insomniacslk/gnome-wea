@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path"
 	"syscall"
@@ -13,7 +14,6 @@ import (
     "math/rand"
 
 	"github.com/getlantern/systray"
-	"github.com/insomniacslk/editor"
 	"github.com/insomniacslk/ipapi"
 	"github.com/insomniacslk/openweathermap"
 	"github.com/insomniacslk/openweathermap/icons"
@@ -321,21 +321,23 @@ func onReady(configFile string, cfg *Config, updateSignal <-chan struct{}) {
 }
 
 func editConfigFile(cfg *Config, configFile string) error {
-	e := editor.New()
+	var (
+		editorPath = DefaultEditorPath
+		editorArgs = DefaultEditorArgs
+	)
 	if cfg != nil {
-		var (
-			editorPath string
-			editorArgs []string
-		)
 		if cfg.Editor != "" {
 			editorPath = cfg.Editor
 		}
 		if cfg.EditorArgs != nil {
 			editorArgs = cfg.EditorArgs
 		}
-		e.Set(editorPath, editorArgs...)
 	}
-	return editor.Open(configFile)
+
+	cmd := exec.Command(editorPath, append(editorArgs, configFile)...)
+	log.Printf("Executing %v", cmd)
+	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+	return cmd.Run()
 }
 
 func onExit() {
