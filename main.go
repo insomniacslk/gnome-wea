@@ -193,20 +193,21 @@ func updateWeather(cfg *Config, items []weatherItem, lastUpdateItem *systray.Men
 		updateCurrentLocation(cfg, g)
 	}
 	for _, item := range items {
+		var text string
 		wea, err := getWeather(cfg, &item.loc)
 		if err != nil {
 			log.Printf("failed to get weather for '%s': %v", item.loc.name, err)
-			// try the other locations
-			continue
+			text = "failed to update"
+		} else {
+			text = fmt.Sprintf(
+				"%s: %.02f%s %s",
+				item.loc.name,
+				wea.Current.Temp, tempUnit,
+				wea.Current.Weather[0].Description,
+			)
+			item.menuitem.SetIcon(icons.Icons[wea.Current.Weather[0].Icon])
 		}
-		text := fmt.Sprintf(
-			"%s: %.02f%s %s",
-			item.loc.name,
-			wea.Current.Temp, tempUnit,
-			wea.Current.Weather[0].Description,
-		)
 		item.menuitem.SetTitle(text)
-		item.menuitem.SetIcon(icons.Icons[wea.Current.Weather[0].Icon])
 	}
 	lastUpdateItem.SetTitle(fmt.Sprintf("Last update: %s", time.Now().Format("Mon Jan 2 15:04:05 MST")))
 }
