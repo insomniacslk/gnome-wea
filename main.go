@@ -11,7 +11,6 @@ import (
 	"path"
 	"syscall"
 	"time"
-    "math/rand"
 
 	"github.com/getlantern/systray"
 	"github.com/insomniacslk/ipapi"
@@ -227,28 +226,13 @@ func getCurrentLocation(cfg *Config) (string, error) {
 func onReady(configFile string, cfg *Config, updateSignal <-chan struct{}) {
 	var g *Graph
 	if cfg.ShowGraph {
-		g = NewGraph(100, 50, &darkGreen, &gray, graphStyleBar)
+		g = NewGraph(100, 100, &darkGreen, &gray, graphStyleBar)
 		g.Blank()
 		icon, err := g.ToIcon()
 		if err != nil {
 			log.Fatalf("Failed to convert to icon: %v", err)
 		}
 		systray.SetIcon(icon)
-	}
-    for {
-        v := rand.Int31n(50)
-        log.Print(v)
-        g.SetNext(int(v))
-		icon, err := g.ToIcon()
-		if err != nil {
-			log.Fatalf("Failed to convert to icon: %v", err)
-		}
-        systray.SetIcon(icon)
-        time.Sleep(time.Second)
-    }
-	curLocName, err := getCurrentLocation()
-	if err != nil {
-		log.Fatalf("Cannot get current location: %v", err)
 	}
 
 	// use the weather icon if the user is not requesting the temperature graph
