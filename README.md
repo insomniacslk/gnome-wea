@@ -9,7 +9,9 @@ Build with
 go build
 ```
 
-On systems without the new `ayatana` appindicator (e.g. Fedora), use
+If it fails to build on Linux because `libayatana-appindicator` is not installed,
+you can either install it if it's available for your OS (currently missing on Fedora),
+or use the old `libappindicator`, by running
 ```
 go build -tags=legacy_appindicator
 ```
@@ -49,9 +51,16 @@ Where:
 ./scripts/build-macos.sh
 ```
 
-## Weather update after resume
+## Weather update after system resume
 
-(linux-only, systemd-only)
+By default the weather will not be updated upon system resume (e.g. after you
+reopen your laptop's lid). If you want this to happen, you need to send a
+SIGUSR1 signal to the `wea` app when your system resumes. The next subsections
+show how to do that on different OSes
+
+### on Linux
+
+This method requires `systemd`. Feel free to suggest other methods.
 
 If you want the weather and location to update after resuming, you can copy
 [`scripts/wea-resume.sh`](scripts/wea-resume.sh) under your
@@ -59,3 +68,21 @@ If you want the weather and location to update after resuming, you can copy
 `/usr/lib/systemd/systemd-sleep`).
 The scripts simply sends a `SIGUSR1` to the `wea` program, which will initiate
 a weather update.
+
+### on macOS
+
+You can use [SleepWatcher](https://www.bernhard-baehr.de/). Install it via
+`brew install sleepwatcher`, follow the on-screen instructions, then create
+a file called `~/.wakeup` and add the following content:
+```
+#!/bin/bash
+killall -USR1 wea
+```
+then give it execution permissions:
+```
+chmod u+x ~/.wakeup
+```
+
+### on Windows
+
+I have no idea how to do that
